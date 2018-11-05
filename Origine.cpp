@@ -26,9 +26,11 @@ int main(int argc, char **argv){
 	unsigned char *a;
 	unsigned char *b;
 
-	a = (unsigned char*)malloc(sizeof(__m128i));
-	b = (unsigned char*)malloc(sizeof(__m128i));
-	dest = (unsigned char*)malloc(sizeof(__m128i));
+	//_aligned_malloc(sizeof(__m128i), sizeof(__m128i));
+
+	a = (unsigned char*)_aligned_malloc(sizeof(__m128i), sizeof(__m128i));
+	b = (unsigned char*)_aligned_malloc(sizeof(__m128i), sizeof(__m128i));
+	dest = (unsigned char*)_aligned_malloc(sizeof(__m128i), sizeof(__m128i));
 
 	memset(a, 0, sizeof(__m128i));
 	memset(b, 0, sizeof(__m128i));
@@ -43,7 +45,7 @@ int main(int argc, char **argv){
 
 	simdBitwiseAnd(dest, b, sizeof(__m128i));
 
-	std::cout << "size of __m128i" << sizeof(__m128i) << std::endl;
+	std::cout << "size of __m128i: " << sizeof(__m128i) << std::endl;
 	std::cout << "result of the simd operation" << (unsigned int)dest[15] << std::endl;
 
 	free(dest);
