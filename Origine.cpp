@@ -3,26 +3,57 @@
 #include <vector>
 #include <iostream>
 
-#define NEW(a,b) new a; std::cout << "ALLOCATED " << #a <<" line: "<<##__LINE__ << " " << ##__FUNCTION__ << std::endl
+#define NEW(a,b) new a; addName(#a); std::cout << "ALLOCATED " << #a <<" line: "<<##__LINE__ << " " << ##__FUNCTION__ << std::endl
 #define NVARHEAP 100
-void* vett[NVARHEAP];
-char names[NVARHEAP][30];
+#define NAMELENGTH 30
 
+
+void* vett[NVARHEAP];
+char names[NVARHEAP][NAMELENGTH];
+int currentPlace = 0;
+int previousPlace = 0;
+int maxPlace = 0;
 int counter = 0;
 
 void* operator new(size_t size) {
-	std::cout << "allocated" << std::endl;
+	
+	//std::cout << "allocated" << std::endl;
 	void* p = malloc(size);
-	vett[counter] = p;
+	vett[currentPlace] = p;
+	previousPlace = currentPlace;
+	if (previousPlace > maxPlace) maxPlace = previousPlace;
+	for (int i = 0; i < NVARHEAP; i++) {
+		if (vett[i] == nullptr) {
+			currentPlace = i;
+			break;
+		}
+	}
+
 	counter++;
 	return p;
 }
 
 void operator delete(void* p) {
-	std::cout << "deallocated" << std::endl;
-	counter--;
-	vett[counter] = nullptr;
+	//std::cout << "deallocated" << std::endl;
+	for (int i = 0; i < maxPlace+1; i++) {
+		if (vett[i] == p) {
+			vett[i] = nullptr;
+			memset(names[i], 0, NAMELENGTH);
+			counter--;
+			currentPlace = i;
+
+			if(i==maxPlace)maxPlace--;
+
+			break;
+		}
+	}
+
 	free(p);
+}
+
+void addName(char* a) {
+	std::cout << a;
+	strcpy_s(names[previousPlace], NAMELENGTH, a);
 }
 
 void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block_size){
@@ -44,6 +75,7 @@ void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block
 int main(int argc, char **argv){
 	
 	uint8_t* ciao = NEW(uint8_t[20]);
+	uint8_t* ciaoa = NEW(uint8_t[20]);
 
 	unsigned char *dest;
 	unsigned char *a;
@@ -76,6 +108,10 @@ int main(int argc, char **argv){
 	_aligned_free(a);
 
 	delete ciao;
+	delete ciaoa;
+
+	int* aaa = NEW(int);
+	delete aaa;
 
 	return 0;
 }
