@@ -1,8 +1,29 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
-
+#include <vector>
 #include <iostream>
 
+#define NEW(a,b) new a; std::cout << "ALLOCATED " << #a <<" line: "<<##__LINE__ << " " << ##__FUNCTION__ << std::endl
+#define NVARHEAP 100
+void* vett[NVARHEAP];
+char names[NVARHEAP][30];
+
+int counter = 0;
+
+void* operator new(size_t size) {
+	std::cout << "allocated" << std::endl;
+	void* p = malloc(size);
+	vett[counter] = p;
+	counter++;
+	return p;
+}
+
+void operator delete(void* p) {
+	std::cout << "deallocated" << std::endl;
+	counter--;
+	vett[counter] = nullptr;
+	free(p);
+}
 
 void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block_size){
 	const __m128i *srcCasted = (__m128i *) src;
@@ -22,6 +43,8 @@ void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block
 
 int main(int argc, char **argv){
 	
+	uint8_t* ciao = NEW(uint8_t[20]);
+
 	unsigned char *dest;
 	unsigned char *a;
 	unsigned char *b;
@@ -48,9 +71,13 @@ int main(int argc, char **argv){
 	std::cout << "size of __m128i: " << sizeof(__m128i) << std::endl;
 	std::cout << "result of the simd operation" << (unsigned int)dest[15] << std::endl;
 
-	free(dest);
-	free(b);
-	free(a);
+	_aligned_free(dest);
+	_aligned_free(b);
+	_aligned_free(a);
+
+	delete ciao;
 
 	return 0;
 }
+
+
