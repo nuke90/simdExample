@@ -1,5 +1,8 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
+
+//ss2 intrinsics
+
 #include <vector>
 #include <iostream>
 
@@ -56,7 +59,7 @@ void addName(char* a) {
 	strcpy_s(names[previousPlace], NAMELENGTH, a);
 }
 
-void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block_size){
+void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block_size) {
 	const __m128i *srcCasted = (__m128i *) src;
 	__m128i *dstCasted = (__m128i *) dst;
 
@@ -69,6 +72,29 @@ void simdBitwiseAnd(unsigned char *dst, const unsigned char *src, unsigned block
 	xmm1 = _mm_and_si128(xmm1, xmm2);
 
 	_mm_store_si128(dstCasted, xmm1);
+
+}
+
+void simdSubtraction(unsigned char *dst, const unsigned char *src, unsigned block_size) {
+
+	const __m128i *srcCasted = (__m128i *) src;
+	__m128i *dstCasted = (__m128i *) dst;
+
+
+	__m128i xmm1;
+	__m128i xmm2;
+
+	xmm1 = _mm_load_si128(srcCasted);
+	xmm2 = _mm_load_si128(dstCasted);
+
+	//this does the subtraction without the sign
+	xmm1 = _mm_subs_epu8(xmm2, xmm1);
+
+	_mm_store_si128(dstCasted, xmm1);
+
+	for (unsigned int i = 0; i < 16; i++) {
+		std::cout << "num: " << (int)(((uint8_t*)dstCasted)[i]) << std::endl;
+	}
 
 }
 
@@ -99,6 +125,22 @@ int main(int argc, char **argv){
 	memcpy(dest, a, sizeof(__m128i));
 
 	simdBitwiseAnd(dest, b, sizeof(__m128i));
+
+	memset(a, 0, sizeof(__m128i));
+	memset(b, 0, sizeof(__m128i));
+	memset(dest, 0, sizeof(__m128i));
+
+	uint8_t vett[16] = { 250,254,250,0,255,254,250,0 ,255,254,250,0 ,255,254,250,0 };
+	uint8_t vettS[16] = { 255,249,245,0,250,249,245,0, 250,249,245,0, 250,249,245,0};
+	
+	//puts 16 * 1byte inside the mmx vectors and then does the subtraction.
+	
+	memcpy(dest, vett, sizeof(uint8_t) * sizeof(__m128i));
+	memcpy(a, vettS, sizeof(uint8_t) * sizeof(__m128i));
+
+	//*a = 0x10;
+	//*dest = 0x11;
+	simdSubtraction(dest, a, sizeof(__m128i));
 
 	std::cout << "size of __m128i: " << sizeof(__m128i) << std::endl;
 	std::cout << "result of the simd operation" << (unsigned int)dest[15] << std::endl;
