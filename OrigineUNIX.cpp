@@ -1,7 +1,9 @@
+//ss2 intrinsics
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
-//ss2 intrinsics
+//AVX512
+#include <immintrin.h>
 
 #include <vector>
 #include <iostream>
@@ -68,6 +70,54 @@ void simdSubtraction(unsigned char *dst, const unsigned char *src, unsigned bloc
 
 }
 
+void simdSubtractionAVX(unsigned char *dst, const unsigned char *src, unsigned block_size) {
+
+	const __m512i *srcCasted = (__m512i *) src;
+	__m512i *dstCasted = (__m512i *) dst;
+
+
+	__m512i xmm1;
+	__m512i xmm2;
+ 	
+	xmm1 = _mm512_loadu_epi8(srcCasted);
+	xmm2 = _mm512_loadu_epi8(dstCasted);
+
+	xmm2 = _mm_subs_epu8(xmm2,xmm1);
+	//xmm1 = _mm_load_si128(srcCasted);
+	//xmm2 = _mm_load_si128(dstCasted);
+
+	////this does the subtraction without the sign(with the u)
+	////xmm1 = _mm_subs_epu8(xmm2, xmm1);
+
+	////xmm1 = _mm_sl
+	////this shifts by 1!
+	//xmm1 = _mm_and_si128(_mm_set1_epi8(0xFF >> 1), _mm_srli_epi32(xmm1, 1));
+	//xmm2 = _mm_and_si128(_mm_set1_epi8(0xFF >> 1), _mm_srli_epi32(xmm2, 1));
+
+	////subtracts as if they where signed(with the i)
+	////xmm1 = _mm_subs_epi8(xmm2, xmm1);
+
+	////http://0x80.pl/notesen/2018-03-11-sse-abs-unsigned.html
+
+	////this part gives out the result of the absolute difference, the subs epu gives a value from 0 to 255,
+	////this positive value is present only in the right side, the or combines all the sides
+
+	//const __m128i ab = _mm_subs_epu8(xmm2, xmm1);
+	//const __m128i ba = _mm_subs_epu8(xmm1, xmm2);
+
+	//xmm1 = _mm_or_si128(ab, ba);
+
+	////reshift.(to double it back)
+	//xmm1 = _mm_and_si128(_mm_set1_epi8(0xFF << 1), _mm_slli_epi32(xmm1, 1));
+
+	//_mm_store_si128(dstCasted, xmm1);
+
+	//for (unsigned int i = 0; i < 16; i++) {
+		//std::cout<<(int)*(( uint8_t* )(dstCasted)+i)<<std::endl;
+		
+	//}
+
+}
 int main(int argc, char **argv){
 	
 	//uint8_t* ciao = NEW(uint8_t[20]);
@@ -113,6 +163,8 @@ int main(int argc, char **argv){
 	//*a = 0x10;
 	//*dest = 0x11;
 	simdSubtraction(dest, a, sizeof(__m128i));
+	simdSubtractionAVX(dest, a, sizeof(__m128i));
+
 
 	_mm_free(dest);
 	_mm_free(b);
