@@ -2,6 +2,9 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
+
+
+//seems that my mac doesn't have support for avx512
 //AVX512
 #include <immintrin.h>
 
@@ -72,17 +75,17 @@ void simdSubtraction(unsigned char *dst, const unsigned char *src, unsigned bloc
 
 void simdSubtractionAVX(unsigned char *dst, const unsigned char *src, unsigned block_size) {
 
-	const __m512i *srcCasted = (__m512i *) src;
-	__m512i *dstCasted = (__m512i *) dst;
+	const __m256i *srcCasted = (__m256i *) src;
+	__m256i *dstCasted = (__m256i *) dst;
 
 
-	__m512i xmm1;
-	__m512i xmm2;
+	__m256i xmm1;
+	__m256i xmm2;
  	
-	xmm1 = _mm512_loadu_epi8(srcCasted);
-	xmm2 = _mm512_loadu_epi8(dstCasted);
+	xmm1 = _mm256_stream_load_si256(srcCasted);
+	xmm2 =  _mm256_stream_load_si256(dstCasted);
 
-	xmm2 = _mm_subs_epu8(xmm2,xmm1);
+	xmm2 = _mm256_subs_epu8(xmm2,xmm1);
 	//xmm1 = _mm_load_si128(srcCasted);
 	//xmm2 = _mm_load_si128(dstCasted);
 
@@ -131,13 +134,13 @@ int main(int argc, char **argv){
 
 	//_aligned_malloc(sizeof(__m128i), sizeof(__m128i));
 
-	a = (unsigned char*)_mm_malloc(sizeof(__m128i), sizeof(__m128i));
-	b = (unsigned char*)_mm_malloc(sizeof(__m128i), sizeof(__m128i));
-	dest = (unsigned char*)_mm_malloc(sizeof(__m128i), sizeof(__m128i));
+	a = (unsigned char*)_mm_malloc(sizeof(__m512i), sizeof(__m512i));
+	b = (unsigned char*)_mm_malloc(sizeof(__m512i), sizeof(__m512i));
+	dest = (unsigned char*)_mm_malloc(sizeof(__m512i), sizeof(__m512i));
 
-	memset(a, 0, sizeof(__m128i));
-	memset(b, 0, sizeof(__m128i));
-	memset(dest, 0, sizeof(__m128i));
+	memset(a, 0, sizeof(__m512i));
+	memset(b, 0, sizeof(__m512i));
+	memset(dest, 0, sizeof(__m512i));
 
 
 	a[15] = 0x02;
@@ -163,7 +166,16 @@ int main(int argc, char **argv){
 	//*a = 0x10;
 	//*dest = 0x11;
 	simdSubtraction(dest, a, sizeof(__m128i));
-	simdSubtractionAVX(dest, a, sizeof(__m128i));
+
+	//uint8_t vett[16] = { 250,254,250,0,255,254,250,0 ,255,254,250,0 ,255,254,250,0 };
+	//uint8_t vettS[16] = { 255,249,245,0,250,249,245,0, 250,249,245,0, 250,249,245,0};
+	
+	//puts 16 * 1byte inside the mmx vectors and then does the subtraction.
+	
+	memcpy(dest, vett, sizeof(uint8_t) * sizeof(__m256i));
+	memcpy(a, vettS, sizeof(uint8_t) * sizeof(__m256i));
+
+	simdSubtractionAVX(dest, a, sizeof(__m256i));
 
 
 	_mm_free(dest);
