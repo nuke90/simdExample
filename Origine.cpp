@@ -87,8 +87,29 @@ void simdSubtraction(unsigned char *dst, const unsigned char *src, unsigned bloc
 	xmm1 = _mm_load_si128(srcCasted);
 	xmm2 = _mm_load_si128(dstCasted);
 
-	//this does the subtraction without the sign
-	xmm1 = _mm_subs_epu8(xmm2, xmm1);
+	//this does the subtraction without the sign(with the u)
+	//xmm1 = _mm_subs_epu8(xmm2, xmm1);
+
+	//xmm1 = _mm_sl
+	//this shifts by 1!
+	xmm1 = _mm_and_si128(_mm_set1_epi8(0xFF >> 1), _mm_srli_epi32(xmm1, 1));
+	xmm2 = _mm_and_si128(_mm_set1_epi8(0xFF >> 1), _mm_srli_epi32(xmm2, 1));
+
+	//subtracts as if they where signed(with the i)
+	//xmm1 = _mm_subs_epi8(xmm2, xmm1);
+
+	//http://0x80.pl/notesen/2018-03-11-sse-abs-unsigned.html
+
+	//this part gives out the result of the absolute difference, the subs epu gives a value from 0 to 255,
+	//this positive value is present only in the right side, the or combines all the sides
+
+	const __m128i ab = _mm_subs_epu8(xmm2, xmm1);
+	const __m128i ba = _mm_subs_epu8(xmm1, xmm2);
+
+	xmm1 = _mm_or_si128(ab, ba);
+
+	//reshift.(to double it back)
+	xmm1 = _mm_and_si128(_mm_set1_epi8(0xFF << 1), _mm_slli_epi32(xmm1, 1));
 
 	_mm_store_si128(dstCasted, xmm1);
 
